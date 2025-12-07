@@ -1,33 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="utf-8" />
-  <title>域名管理后台</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 40px auto; max-width: 720px; }
-    textarea { width: 100%; min-height: 240px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
-    .row { display: flex; gap: 10px; align-items: center; }
-    input[type=text] { flex: 1; }
-    button { padding: 10px 16px; }
-    #status { margin-top: 12px; color: #555; }
-  </style>
+  <meta charset="utf-8">
+  <title>懒人优选 IP</title>
 </head>
 <body>
-  <h2>域名管理后台</h2>
-  <div class="row">
-    <input id="workerBase" type="text" placeholder="Worker 基地址，如 https://your-worker.workers.dev" />
-    <input id="token" type="text" placeholder="Admin Bearer Token" />
-    <button id="loadBtn">加载当前域名</button>
-  </div>
-
-  <p>一行一个，或用逗号/中文逗号分隔。</p>
-  <textarea id="domains"></textarea>
-  <div class="row" style="margin-top:12px;">
-    <button id="saveBtn">保存到 KV</button>
-    <span id="status"></span>
-  </div>
-
-  <script src="./admin.js"></script>
+  <h2>🚀 懒人优选 IP</h2>
+  <button onclick="getIPs()">获取 IP</button>
+  <pre id="result">点击按钮开始获取</pre>
+  <script src="main.js"></script>
 </body>
 </html>
