@@ -5,126 +5,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>懒人优选 IP 获取工具</title>
   <style>
-    /* 全局样式 */
-    body { 
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
-      background-color: #f4f7f6; 
-      display: flex; 
-      justify-content: center; 
-      align-items: center; 
-      min-height: 100vh; 
-      margin: 0;
-      color: #333;
-    }
-
-    /* 卡片容器 */
-    .container {
-      background: #ffffff;
-      padding: 30px;
-      border-radius: 12px;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-      width: 90%;
-      max-width: 600px;
-      text-align: center;
-    }
-
-    h2 {
-      color: #1a73e8;
-      margin-bottom: 20px;
-      font-weight: 600;
-    }
-
-    /* 结果输出框 */
-    #output { 
-      margin: 20px 0;
-      width: 100%;
-    }
-
-    pre { 
-      background: #f8f9fa; 
-      padding: 15px; 
-      border: 1px solid #e0e0e0; 
-      border-radius: 8px;
-      font-size: 13px; 
-      white-space: pre-wrap; 
-      word-break: break-all;
-      height: 160px;
-      overflow-y: auto;       
-      text-align: left;
-      line-height: 1.5;
-    }
-
-    /* 按钮通用样式 */
-    button { 
-      padding: 12px 25px; 
-      font-size: 15px; 
-      border: none;
-      border-radius: 8px;
-      cursor: pointer; 
-      transition: background-color 0.2s;
-      margin: 5px;
-      font-weight: 500;
-    }
-
-    /* 主按钮 */
-    #btn {
-      background-color: #1a73e8;
-      color: white;
-    }
-    #btn:hover:not([disabled]) {
-      background-color: #155cb0;
-    }
-    #btn:disabled {
-      background-color: #a8c3e8;
-      cursor: not-allowed;
-      opacity: 0.8;
-    }
-
-    /* 专用复制按钮 (默认隐藏) */
-    #btn-copy {
-      background-color: #34a853; /* 绿色 */
-      color: white;
-      display: none;
-    }
-    #btn-copy:hover {
-      background-color: #2d8e47;
-    }
-
-    /* 次要按钮 */
-    .secondary-btn {
-      background-color: #e0e0e0;
-      color: #333;
-    }
-    .secondary-btn:hover {
-      background-color: #cccccc;
-    }
-
-    /* 提示条 */
-    #toast { 
-      position: fixed;
-      bottom: 30px;
-      left: 50%;
-      transform: translateX(-50%);
-      min-width: 200px; 
-      background-color: #333; 
-      color: #fff; 
-      text-align: center; 
-      border-radius: 8px; 
-      padding: 12px 20px; 
-      opacity: 0; 
-      transition: opacity 0.5s ease; 
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-      z-index: 1000;
-    }
+    /* ... (保留所有 CSS 样式不变) ... */
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f4f7f6; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; color: #333;}
+    .container { background: #ffffff; padding: 30px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); width: 90%; max-width: 600px; text-align: center; }
+    h2 { color: #1a73e8; margin-bottom: 20px; font-weight: 600; }
+    #output { margin: 20px 0; width: 100%; }
+    pre { background: #f8f9fa; padding: 15px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 13px; white-space: pre-wrap; word-break: break-all; height: 160px; overflow-y: auto; text-align: left; line-height: 1.5; }
+    button { padding: 12px 25px; font-size: 15px; border: none; border-radius: 8px; cursor: pointer; transition: background-color 0.2s; margin: 5px; font-weight: 500;}
+    #btn { background-color: #1a73e8; color: white; }
+    #btn:hover:not([disabled]) { background-color: #155cb0; }
+    #btn:disabled { background-color: #a8c3e8; cursor: not-allowed; opacity: 0.8; }
+    #btn-copy { background-color: #34a853; color: white; display: none; }
+    #btn-copy:hover { background-color: #2d8e47; }
+    .secondary-btn { background-color: #e0e0e0; color: #333; }
+    .secondary-btn:hover { background-color: #cccccc; }
+    #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); min-width: 200px; background-color: #333; color: #fff; text-align: center; border-radius: 8px; padding: 12px 20px; opacity: 0; transition: opacity 0.5s ease; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); z-index: 1000; }
     #toast.show { opacity: 1; }
-
-    /* 错误信息 */
-    #error { 
-      margin-top: 15px; 
-      color: #d93025; 
-      font-weight: 500;
-      font-size: 14px;
-    }
+    #error { margin-top: 15px; color: #d93025; font-weight: 500; font-size: 14px; }
   </style>
 </head>
 <body>
@@ -152,24 +49,46 @@
   <div id="toast"></div>
 
   <script>
-    // 域名列表和 DNS URL 注入点：将被 functions/[[path]].js 替换
+    // 注入点：不再是明文域名，而是 Base64 编码字符串
     /* TARGET_DOMAINS_PLACEHOLDER */
+
+    // 定义变量，在 getIPs 函数启动时才会解析
+    let DOMAINS = null;
+    let DNS_URL_TEMPLATE = null;
 
     // --- 工具函数 ---
     
-    // 提示框显示
-    function showToast(msg, isError = false) {
-      const t = document.getElementById("toast");
-      t.textContent = msg;
-      t.style.backgroundColor = isError ? "#d93025" : "#333";
-      t.className = "show";
-      setTimeout(() => t.className = "", 3000);
+    // Base64 解码函数
+    function decodeBase64Vars() {
+        if (DOMAINS !== null) return; // 避免重复解析
+        try {
+            // Base64 解码并 JSON 解析出域名数组
+            const domainString = atob(ENCODED_DOMAINS);
+            DOMAINS = JSON.parse(domainString);
+            
+            // Base64 解码出 DNS URL
+            DNS_URL_TEMPLATE = atob(ENCODED_DNS_URL);
+            
+        } catch(e) {
+            console.error("Failed to decode domains or DNS URL:", e);
+            DOMAINS = [];
+            DNS_URL_TEMPLATE = "";
+        }
     }
 
-    // 单个域名 DNS 解析 (使用 DNS_URL_TEMPLATE)
+    function showToast(msg, isError = false) {
+        const t = document.getElementById("toast");
+        t.textContent = msg;
+        t.style.backgroundColor = isError ? "#d93025" : "#333";
+        t.className = "show";
+        setTimeout(() => t.className = "", 3000);
+    }
+
+    // 单个域名 DNS 解析 (使用解码后的 DNS_URL_TEMPLATE)
     async function resolveOne(domain, type) {
+      if (!DNS_URL_TEMPLATE) return [];
+
       try {
-        // 使用注入的 DNS_URL_TEMPLATE 变量
         let url = DNS_URL_TEMPLATE.replace('NAME', encodeURIComponent(domain));
         url = url.replace('TYPE', type);
 
@@ -177,7 +96,6 @@
         if (!res.ok) return [];
         const data = await res.json();
         
-        // 假设返回的是一个包含 Answer 数组的标准 DoH JSON 结构
         return (data.Answer || []).map(a => a.data).filter(Boolean);
         
       } catch (e) {
@@ -186,40 +104,38 @@
       }
     }
 
-    // 综合解析 A 和 AAAA 记录
+    // 综合解析 A 和 AAAA 记录 (保持不变)
     async function resolveDomain(domain) {
-      const [a, aaaa] = await Promise.all([
-        resolveOne(domain, "A"),
-        resolveOne(domain, "AAAA")
-      ]);
-      // 简单去重
-      const combined = [...(a || []), ...(aaaa || [])];
-      return [...new Set(combined)];
+        const [a, aaaa] = await Promise.all([
+            resolveOne(domain, "A"),
+            resolveOne(domain, "AAAA")
+        ]);
+        const combined = [...(a || []), ...(aaaa || [])];
+        return [...new Set(combined)];
     }
 
-    // 清空重置界面
     function clearOutput() {
-      document.getElementById("result").textContent = "已清空。";
-      document.getElementById("error").textContent = "";
-      
-      // 重置按钮状态
-      const btn = document.getElementById("btn");
-      const copyBtn = document.getElementById("btn-copy");
-      btn.style.display = "inline-block";
-      btn.textContent = "关闭代理 获取 IP / 复制";
-      btn.disabled = false;
-      copyBtn.style.display = "none";
+        // ... (保持不变) ...
+        document.getElementById("result").textContent = "已清空。";
+        document.getElementById("error").textContent = "";
+        
+        const btn = document.getElementById("btn");
+        const copyBtn = document.getElementById("btn-copy");
+        btn.style.display = "inline-block";
+        btn.textContent = "关闭代理 获取 IP / 复制";
+        btn.disabled = false;
+        copyBtn.style.display = "none";
     }
 
-    // 手动复制函数 (用于备用按钮)
     async function manualCopy() {
-      const text = document.getElementById("result").textContent;
-      try {
-        await navigator.clipboard.writeText(text);
-        showToast("✅ 复制成功！");
-      } catch (err) {
-        showToast("❌ 复制失败，请手动全选复制", true);
-      }
+        // ... (保持不变) ...
+        const text = document.getElementById("result").textContent;
+        try {
+            await navigator.clipboard.writeText(text);
+            showToast("✅ 复制成功！");
+        } catch (err) {
+            showToast("❌ 复制失败，请手动全选复制", true);
+        }
     }
 
     // --- 主逻辑 ---
@@ -229,6 +145,9 @@
       const errDiv = document.getElementById("error");
       const resPre = document.getElementById("result");
 
+      // 核心：调用解码函数，解析出 DOMAINS 和 DNS_URL_TEMPLATE
+      decodeBase64Vars();
+
       // 初始化 UI 状态
       btn.disabled = true; 
       btn.textContent = "⚙️ 获取中...";
@@ -236,7 +155,11 @@
       copyBtn.style.display = "none";
 
       try {
-        // 1. 前端并发解析 DNS (使用注入的 DOMAINS 变量)
+        if (!DOMAINS || DOMAINS.length === 0) {
+            throw new Error("域名列表为空，请联系管理员配置。");
+        }
+        
+        // 1. 前端并发解析 DNS (使用解码后的 DOMAINS 变量)
         const results = {};
         const promiseArray = DOMAINS.map(async (d) => {
           const ips = await resolveDomain(d);
@@ -246,10 +169,10 @@
         await Promise.all(promiseArray);
 
         if (Object.keys(results).length === 0) {
-          throw new Error("未能解析到任何有效 IP，请检查网络。");
+          throw new Error("未能解析到任何有效 IP，请检查网络或解析服务。");
         }
 
-        // 2. 发送到后端处理 (赋诗、格式化)
+        // 2. 发送到后端处理 (赋诗、格式化) - 保持不变
         const res = await fetch("/", { 
           method: "POST",
           headers: { "Content-Type": "application/json" },
