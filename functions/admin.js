@@ -1,11 +1,14 @@
 // functions/admin.js
 
-// 默认 DNS 服务商配置
+// 更新后的 DNS 服务商配置
 const DEFAULT_DNS_PROVIDERS = [
+  // 国内优化 (推荐)
   { name: "AliDNS (默认)", url: "https://dns.alidns.com/resolve?name=NAME&type=TYPE" },
-  { name: "Cloudflare DoH", url: "https://cloudflare-dns.com/dns-query?name=NAME&type=TYPE" },
-  { name: "Google Public DNS", url: "https://dns.google/resolve?name=NAME&type=TYPE" },
-  { name: "Tuna DNS (清华)", url: "https://doh.tuna.tsinghua.edu.cn/dns-query?name=NAME&type=TYPE" }
+  { name: "腾讯 DnsPod", url: "https://doh.pub/resolve?name=NAME&type=TYPE" }, 
+  
+  // 国际稳定/安全
+  { name: "Quad9 (安全)", url: "https://dns.quad9.net/dns-query?name=NAME&type=TYPE" }, 
+  { name: "OpenDNS", url: "https://doh.opendns.com/dns-query?name=NAME&type=TYPE" } 
 ];
 
 // 注入的前端 HTML 结构，已集成样式、密码和 DNS 服务商选择
@@ -154,11 +157,15 @@ const ADMIN_HTML = (domains, currentProviderUrl) => {
 `;
 };
 
+// ==========================================
+// 核心处理逻辑
+// ==========================================
+
 export async function onRequest(context) {
   const { request, env } = context;
   const KV = env.DOMAINS_KV;
   const ADMIN_KEY = env.ADMIN_PASSWORD;
-  const KEY = "config"; 
+  const KEY = "config"; // 使用一个统一的 KEY 来存储配置对象
 
   // POST 请求：保存数据 (需要密码验证)
   if (request.method === "POST") {
@@ -193,7 +200,8 @@ export async function onRequest(context) {
   let config = configString ? JSON.parse(configString) : {};
 
   // 默认值
-  const DEFAULT_DNS_URL = DEFAULT_DNS_PROVIDERS[0].url;
+  // 确保使用更新后的 DEFAULT_DNS_PROVIDERS[0].url 作为默认 DNS URL
+  const DEFAULT_DNS_URL = DEFAULT_DNS_PROVIDERS[0].url; 
   const domainsArray = config.domains || ["openai.com", "cf.pages.dev"];
   const currentProviderUrl = config.dns_url || DEFAULT_DNS_URL;
 
