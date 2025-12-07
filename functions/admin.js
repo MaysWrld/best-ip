@@ -1,7 +1,22 @@
 // functions/admin.js
 
-// 注入的前端 HTML 结构，已集成样式和密码输入框
-const ADMIN_HTML = (domains) => `
+// 默认 DNS 服务商配置
+const DEFAULT_DNS_PROVIDERS = [
+  { name: "AliDNS (默认)", url: "https://dns.alidns.com/resolve?name=NAME&type=TYPE" },
+  { name: "Cloudflare DoH", url: "https://cloudflare-dns.com/dns-query?name=NAME&type=TYPE" },
+  { name: "Google Public DNS", url: "https://dns.google/resolve?name=NAME&type=TYPE" },
+  { name: "Tuna DNS (清华)", url: "https://doh.tuna.tsinghua.edu.cn/dns-query?name=NAME&type=TYPE" }
+];
+
+// 注入的前端 HTML 结构，已集成样式、密码和 DNS 服务商选择
+const ADMIN_HTML = (domains, currentProviderUrl) => {
+    // 生成 <select> 选项列表
+    const providerOptions = DEFAULT_DNS_PROVIDERS.map(p => {
+        const selected = p.url === currentProviderUrl ? 'selected' : '';
+        return `<option value="${p.url}" ${selected}>${p.name}</option>`;
+    }).join('');
+
+    return `
 <!DOCTYPE html>
 <html>
 <head>
@@ -9,7 +24,7 @@ const ADMIN_HTML = (domains) => `
   <title>域名管理后台</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    /* 统一的样式 */
+    /* 统一的样式 (省略，保持不变) */
     body { 
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
       background-color: #f4f7f6; 
@@ -34,7 +49,7 @@ const ADMIN_HTML = (domains) => `
       margin-bottom: 20px;
       font-weight: 600;
     }
-    textarea, input[type="password"] { 
+    textarea, input[type="password"], select { 
       width: 100%; 
       padding: 12px; 
       margin-bottom: 15px;
@@ -77,13 +92,18 @@ const ADMIN_HTML = (domains) => `
   <div class="container">
     <h2>🔑 域名列表管理</h2>
     <p style="color: #666; font-size: 14px; margin-bottom: 20px;">
-        请在下方文本框中输入您希望优选的域名，每行一个。
+        请在下方配置优选参数。
     </p>
     
     <form id="adminForm">
       <input type="password" id="admin_key" placeholder="请输入管理密码" required><br>
-      <textarea name="domains" id="domains">${domains.join('\n')}</textarea><br>
-      <button type="submit">💾 保存域名列表</button>
+      
+      <select id="dns_provider" name="dns_provider" style="text-align: left;">
+        ${providerOptions}
+      </select><br>
+
+      <textarea name="domains" id="domains" placeholder="每行一个域名">${domains.join('\n')}</textarea><br>
+      <button type="submit">💾 保存配置</button>
     </form>
     
     <div id="message"></div>
@@ -100,25 +120,26 @@ const ADMIN_HTML = (domains) => `
       messageDiv.className = '';
       
       const password = document.getElementById('admin_key').value;
+      const providerUrl = document.getElementById('dns_provider').value;
+      
       const formData = new FormData(form);
       
-      // 清洗输入：按换行符分隔，去除空白行
+      // 清洗输入
       const domains = formData.get('domains').split(/\\s*\\n\\s*/).map(s => s.trim()).filter(s => s.length > 0);
 
-      // 发送 POST 请求到当前路由 (/admin)
+      // 发送 POST 请求
       const res = await fetch('/admin', {
         method: 'POST',
         headers: { 
             'Content-Type': 'application/json',
-            // 将密码放入自定义请求头进行传输
             'X-Admin-Key': password
         },
-        body: JSON.stringify({ domains: domains })
+        body: JSON.stringify({ domains: domains, dns_url: providerUrl }) // 新增 dns_url
       });
 
       if (res.ok) {
         messageDiv.className = 'success';
-        messageDiv.textContent = '✅ 域名列表保存成功！';
+        messageDiv.textContent = '✅ 配置保存成功！';
       } else if (res.status === 401) {
         messageDiv.className = 'error';
         messageDiv.textContent = '❌ 认证失败，密码错误！';
@@ -131,29 +152,39 @@ const ADMIN_HTML = (domains) => `
 </body>
 </html>
 `;
+};
+
+// ==========================================
+// 核心处理逻辑
+// ==========================================
 
 export async function onRequest(context) {
   const { request, env } = context;
   const KV = env.DOMAINS_KV;
-  const ADMIN_KEY = env.ADMIN_PASSWORD; // 从环境变量读取密码
-  const KEY = "domains";
-  
+  const ADMIN_KEY = env.ADMIN_PASSWORD;
+  const KEY = "config"; // 使用一个统一的 KEY 来存储配置对象
+
   // POST 请求：保存数据 (需要密码验证)
   if (request.method === "POST") {
     // 1. 验证密码
     const clientKey = request.headers.get('X-Admin-Key');
     
     if (!ADMIN_KEY || !clientKey || clientKey !== ADMIN_KEY) {
-        return new Response("Unauthorized: Invalid password or ADMIN_PASSWORD not set in ENV.", { status: 401 });
+        return new Response("Unauthorized: Invalid password.", { status: 401 });
     }
 
     // 2. 验证通过，执行保存逻辑
     try {
-      const { domains } = await request.json();
-      if (!Array.isArray(domains)) throw new Error("Domains must be an array.");
+      const { domains, dns_url } = await request.json();
+      if (!Array.isArray(domains) || typeof dns_url !== 'string') throw new Error("Invalid format.");
+
+      const config = {
+          domains: domains,
+          dns_url: dns_url
+      };
 
       // 存储到 KV
-      await KV.put(KEY, JSON.stringify(domains));
+      await KV.put(KEY, JSON.stringify(config));
       return new Response("OK", { status: 200 });
 
     } catch (e) {
@@ -161,11 +192,15 @@ export async function onRequest(context) {
     }
   }
 
-  // GET 请求：显示管理页面 (不需要密码，因为页面本身不含敏感数据)
-  let domainsString = await KV.get(KEY);
-  let domainsArray = domainsString ? JSON.parse(domainsString) : ["openai.com", "cf.pages.dev"];
+  // GET 请求：显示管理页面
+  let configString = await KV.get(KEY);
+  let config = configString ? JSON.parse(configString) : {};
 
-  return new Response(ADMIN_HTML(domainsArray), {
+  // 默认值
+  const domainsArray = config.domains || ["openai.com", "cf.pages.dev"];
+  const currentProviderUrl = config.dns_url || DEFAULT_DNS_PROVIDERS[0].url;
+
+  return new Response(ADMIN_HTML(domainsArray, currentProviderUrl), {
     headers: { "Content-Type": "text/html; charset=utf-8" }
   });
 }
