@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>域名管理后台</title>
+</head>
+<body>
+  <h2>域名管理后台</h2>
+  <input id="token" type="text" placeholder="Admin Token" />
+  <button onclick="loadDomains()">加载</button>
+  <textarea id="domains" rows="10" cols="50"></textarea><br>
+  <button onclick="saveDomains()">保存</button>
+  <pre id="status"></pre>
+  <script src="admin.js"></script>
+</body>
+</html>
