@@ -1,5 +1,5 @@
 // 修改为你的 Worker 地址
-const WORKER_BASE = "https://your-worker.workers.dev";
+const WORKER_BASE = "https://bestip.400123456.xyz";
 
 // Toast 提示
 function showToast(msg, isError=false) {
