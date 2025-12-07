@@ -16,6 +16,7 @@ const normalizeIPs = (arr) => {
 
 // 中国古诗名句库 (保持不变)
 const quotes = [
+  // ... (保留您的所有古诗名句) ...
   "长风破浪会有时","会当凌绝顶，一览众山小","宝剑锋从磨砺出","梅花香自苦寒来","天生我材必有用",
   "千里之行，始于足下","路漫漫其修远兮，吾将上下而求索","不畏浮云遮望眼","海内存知己，天涯若比邻","莫愁前路无知己",
   "业精于勤荒于嬉","黑发不知勤学早，白首方悔读书迟","少壮不努力，老大徒伤悲","书山有路勤为径，学海无涯苦作舟","学而不厌，诲人不倦",
@@ -35,7 +36,10 @@ const quotes = [
   "读书破万卷，下笔如有神","书山有路勤为径，学海无涯苦作舟","学而不厌，诲人不倦","学而时习之，不亦说乎","温故而知新，可以为师矣"
 ];
 
-// 兜底默认域名 (与您原始脚本中的列表保持一致)
+// 默认 DNS URL，作为兜底
+const DEFAULT_DNS_URL = "https://dns.alidns.com/resolve?name=NAME&type=TYPE";
+
+// 兜底默认域名
 const defaultDomains = [
   "openai.com", "cfcn-a-freegoa9.sectigo.pp.ua", "tajikistan.mfa.gov.ua", 
   "cfyx.aliyun.20237737.xyz", "commcloud.prod-abbs-ubi-com.cc-ecdn.net.cdn.cloudflare.net", 
@@ -49,23 +53,25 @@ const defaultDomains = [
 // ==========================================
 export async function onRequest(context) {
   const { request, env } = context;
-  const KV = env.DOMAINS_KV; // 使用您指定的 KV 命名空间名称
+  const KV = env.DOMAINS_KV;
+  const CONFIG_KEY = "config";
 
-  // 1. 从 KV 读取域名列表
-  let targetDomains = defaultDomains;
+  // 1. 从 KV 读取完整的配置 (域名列表 + DNS URL)
+  let config = {};
   try {
-    const domainData = await KV.get("domains");
-    if (domainData) {
-      const parsed = JSON.parse(domainData);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        targetDomains = parsed;
-      }
-    }
+    const configString = await KV.get(CONFIG_KEY);
+    config = configString ? JSON.parse(configString) : {};
   } catch (e) {
-    console.error("Failed to read or parse domains from KV:", e);
+    console.error("Failed to read or parse config from KV:", e);
   }
+
+  const targetDomains = (Array.isArray(config.domains) && config.domains.length > 0) 
+                        ? config.domains 
+                        : defaultDomains;
+                        
+  const dnsProviderUrl = config.dns_url || DEFAULT_DNS_URL;
   
-  // A. 处理 POST 请求 (IP 格式化)
+  // A. 处理 POST 请求 (IP 格式化) - 逻辑不变
   if (request.method === "POST") {
     try {
       const payload = await request.json();
@@ -75,7 +81,6 @@ export async function onRequest(context) {
         const ips = normalizeIPs(records);
         for (const ip of ips) {
           const quote = quotes[Math.floor(Math.random() * quotes.length)];
-          // 输出格式：[IP]:443#[古诗]
           results.push(`${ip}:443#${quote}`);
         }
       }
@@ -90,15 +95,16 @@ export async function onRequest(context) {
   }
 
   // B. 处理 GET 请求 (返回前端页面)
-  // 调用 Pages 的默认行为，获取 /public/index.html 的内容
   const response = await context.next(); 
   
-  // 注入域名列表到 HTML
+  // 注入域名列表和 DNS URL 到 HTML
   const text = await response.text();
-  const html = text.replace(
-      '/* TARGET_DOMAINS_PLACEHOLDER */', 
-      `const DOMAINS = ${JSON.stringify(targetDomains)};`
-  );
+  const injection = `
+    const DOMAINS = ${JSON.stringify(targetDomains)};
+    const DNS_URL_TEMPLATE = "${dnsProviderUrl}";
+  `;
+  
+  const html = text.replace('/* TARGET_DOMAINS_PLACEHOLDER */', injection);
 
   return new Response(html, response);
 }
