@@ -1,4 +1,4 @@
-const WORKER_BASE = "https://your-worker.workers.dev";
+const WORKER_BASE = "https://bestip.400123456.xyz";
 
 function showToast(msg, isError=false) {
   const t=document.getElementById("toast");
