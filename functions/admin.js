@@ -24,7 +24,7 @@ const ADMIN_HTML = (domains, currentProviderUrl) => {
   <title>域名管理后台</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    /* 统一的样式 (省略，保持不变) */
+    /* 统一的样式 */
     body { 
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
       background-color: #f4f7f6; 
@@ -154,15 +154,11 @@ const ADMIN_HTML = (domains, currentProviderUrl) => {
 `;
 };
 
-// ==========================================
-// 核心处理逻辑
-// ==========================================
-
 export async function onRequest(context) {
   const { request, env } = context;
   const KV = env.DOMAINS_KV;
   const ADMIN_KEY = env.ADMIN_PASSWORD;
-  const KEY = "config"; // 使用一个统一的 KEY 来存储配置对象
+  const KEY = "config"; 
 
   // POST 请求：保存数据 (需要密码验证)
   if (request.method === "POST") {
@@ -197,8 +193,9 @@ export async function onRequest(context) {
   let config = configString ? JSON.parse(configString) : {};
 
   // 默认值
+  const DEFAULT_DNS_URL = DEFAULT_DNS_PROVIDERS[0].url;
   const domainsArray = config.domains || ["openai.com", "cf.pages.dev"];
-  const currentProviderUrl = config.dns_url || DEFAULT_DNS_PROVIDERS[0].url;
+  const currentProviderUrl = config.dns_url || DEFAULT_DNS_URL;
 
   return new Response(ADMIN_HTML(domainsArray, currentProviderUrl), {
     headers: { "Content-Type": "text/html; charset=utf-8" }
