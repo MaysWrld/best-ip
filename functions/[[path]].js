@@ -16,7 +16,6 @@ const normalizeIPs = (arr) => {
 
 // 中国古诗名句库 (保持不变)
 const quotes = [
-  // ... (保留您的所有古诗名句) ...
   "长风破浪会有时","会当凌绝顶，一览众山小","宝剑锋从磨砺出","梅花香自苦寒来","天生我材必有用",
   "千里之行，始于足下","路漫漫其修远兮，吾将上下而求索","不畏浮云遮望眼","海内存知己，天涯若比邻","莫愁前路无知己",
   "业精于勤荒于嬉","黑发不知勤学早，白首方悔读书迟","少壮不努力，老大徒伤悲","书山有路勤为径，学海无涯苦作舟","学而不厌，诲人不倦",
@@ -65,13 +64,14 @@ export async function onRequest(context) {
     console.error("Failed to read or parse config from KV:", e);
   }
 
+  // 使用 KV 存储的域名列表，如果 KV 中没有或为空，则使用默认列表
   const targetDomains = (Array.isArray(config.domains) && config.domains.length > 0) 
                         ? config.domains 
                         : defaultDomains;
                         
   const dnsProviderUrl = config.dns_url || DEFAULT_DNS_URL;
   
-  // A. 处理 POST 请求 (IP 格式化) - 逻辑不变
+  // A. 处理 POST 请求 (IP 格式化)
   if (request.method === "POST") {
     try {
       const payload = await request.json();
