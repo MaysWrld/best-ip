@@ -33,7 +33,7 @@ const quotes = [
   "志不强者智不达","志当存高远","有志者事竟成","不飞则已，一飞冲天","不鸣则已，一鸣惊人",
   "千里之行，始于足下","不积跬步，无以至千里","不积小流，无以成江海","绳锯木断，水滴石穿","锲而不舍，金石可镂",
   "工欲善其事，必先利其器","凡事预则立，不预则废","敏而好学，不耻下问","学而不思则罔，思而不学则殆","知之者不如好之者，好之者不如乐之者",
-  "读书破万卷，下笔如有神","书山有路勤为径，学海无涯苦作舟","学而不厌，诲人不倦","学而时习之，不亦说乎","温故而知新，可以为师矣", // <-- 修复：已添加逗号
+  "读书破万卷，下笔如有神","书山有路勤为径，学海无涯苦作舟","学而不厌，诲人不倦","学而时习之，不亦说乎","温故而知新，可以为师矣", // <-- 修复了语法错误
   "长风破浪会有时，直挂云帆济沧海","人生如棋，落子无悔","人生如戏，全凭演技","人生如酒，愈久愈香","人生如歌，曲终人散",
   "玉不琢不成器，人不学不知义","学然后知不足，教然后知困","学而不厌，诲人不倦","学而不思则罔，思而不学则殆",
   "读万卷书，行万里路","书犹药也，善读之可以医愚","书中自有黄金屋，书中自有颜如玉","书到用时方恨少，事非经过不知难",
@@ -85,24 +85,32 @@ export async function onRequest(context) {
     try {
       const payload = await request.json();
       const results = [];
+      
+      // 优化 1: 创建全局 Set 来存储所有唯一的 IP
+      const uniqueIps = new Set(); 
 
+      // 优化 2: 遍历所有记录，将去重后的 IP 加入全局 Set
       for (const records of Object.values(payload || {})) {
         const ips = normalizeIPs(records);
         for (const ip of ips) {
-          const quote = quotes[Math.floor(Math.random() * quotes.length)];
-
-          let formattedIp;
-          // 核心修改：判断是否为 IPv6，并添加中括号
-          if (isIPv6(ip)) {
-            // IPv6 地址格式：[2606:4700:3010:0:fb:e0fe:4942:60b6]:443#诗句
-            formattedIp = `[${ip}]:443#${quote}`;
-          } else {
-            // IPv4 地址格式：104.26.15.158:443#诗句
-            formattedIp = `${ip}:443#${quote}`;
-          }
-
-          results.push(formattedIp);
+          uniqueIps.add(ip);
         }
+      }
+      
+      // 优化 3: 遍历全局唯一的 IP 列表进行赋诗和格式化
+      for (const ip of uniqueIps) {
+        // 随机获取一句诗词
+        const quote = quotes[Math.floor(Math.random() * quotes.length)];
+        
+        let formattedIp;
+        // 核心格式化逻辑：IPv6 添加中括号
+        if (isIPv6(ip)) {
+          formattedIp = `[${ip}]:443#${quote}`;
+        } else {
+          formattedIp = `${ip}:443#${quote}`;
+        }
+        
+        results.push(formattedIp);
       }
 
       return Response.json(results);
@@ -119,7 +127,6 @@ export async function onRequest(context) {
   const response = await context.next();
 
   // 核心：使用 Base64 编码域名列表和 DNS URL
-  // JSON.stringify(targetDomains) 是域名数组的字符串表示
   const encodedDomains = btoa(JSON.stringify(targetDomains));
   const encodedDnsUrl = btoa(dnsProviderUrl);
 
