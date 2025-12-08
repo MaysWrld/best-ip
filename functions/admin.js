@@ -4,9 +4,11 @@
 const DEFAULT_DNS_PROVIDERS = [
   // 国内优化 (推荐)
   { name: "AliDNS (默认)", url: "https://dns.alidns.com/resolve?name=NAME&type=TYPE" },
-  { name: "腾讯 DnsPod", url: "https://doh.pub/resolve?name=NAME&type=TYPE" }, 
+  { name: "腾讯 DnsPod", url: "https://sm2.doh.pub/dns-query?name=NAME&type=TYPE" }, 
+  { name: "百度公共 DNS", url: "https://doh.baidu.com/resolve?name=NAME&type=TYPE" }, 
   
   // 国际稳定/安全
+  { name: "Cloudflare DoH", url: "https://cloudflare-dns.com/dns-query?name=NAME&type=TYPE" },
   { name: "Quad9 (安全)", url: "https://dns.quad9.net/dns-query?name=NAME&type=TYPE" }, 
   { name: "OpenDNS", url: "https://doh.opendns.com/dns-query?name=NAME&type=TYPE" } 
 ];
