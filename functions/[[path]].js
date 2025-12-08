@@ -4,7 +4,9 @@
 // 1. 工具函数 (IP 验证与清洗)
 // ==========================================
 const isIPv4 = (ip) => /^(\d{1,3}\.){3}\d{1,3}$/.test(ip);
-const isIPv6 = (ip) => /^[0-9a-f:]+$/i.test(ip) && ip.includes(":");
+// 调整了 isIPv6 函数的逻辑：虽然逻辑不变，但用于格式判断
+const isIPv6 = (ip) => /^[0-9a-f:]+$/i.test(ip) && ip.includes(":"); 
+
 const normalizeIPs = (arr) => {
   const set = new Set();
   for (const ip of arr || []) {
@@ -14,7 +16,7 @@ const normalizeIPs = (arr) => {
   return [...set];
 };
 
-// 中国古诗名句库 (保持不变)
+// 中国古诗名句库 (用于后端赋诗)
 const quotes = [
   "长风破浪会有时","会当凌绝顶，一览众山小","宝剑锋从磨砺出","梅花香自苦寒来","天生我材必有用",
   "千里之行，始于足下","路漫漫其修远兮，吾将上下而求索","不畏浮云遮望眼","海内存知己，天涯若比邻","莫愁前路无知己",
@@ -32,24 +34,13 @@ const quotes = [
   "志不强者智不达","志当存高远","有志者事竟成","不飞则已，一飞冲天","不鸣则已，一鸣惊人",
   "千里之行，始于足下","不积跬步，无以至千里","不积小流，无以成江海","绳锯木断，水滴石穿","锲而不舍，金石可镂",
   "工欲善其事，必先利其器","凡事预则立，不预则废","敏而好学，不耻下问","学而不思则罔，思而不学则殆","知之者不如好之者，好之者不如乐之者",
-  "读书破万卷，下笔如有神","书山有路勤为径，学海无涯苦作舟","学而不厌，诲人不倦","学而时习之，不亦说乎","温故而知新，可以为师矣""天若有情天亦老",
-  "落红不是无情物，化作春泥更护花","采菊东篱下，悠然见南山","山重水复疑无路，柳暗花明又一村","会当水击三千里", "长风破浪会有时，直挂云帆济沧海",
-  "人生如棋，落子无悔","人生如戏，全凭演技","人生如酒，愈久愈香","人生如歌，曲终人散", "宝剑不磨要生锈，人不学习要落后",
-  "玉不琢不成器，人不学不知义","学然后知不足，教然后知困","学而不厌，诲人不倦","学而不思则罔，思而不学则殆", 
-  "读万卷书，行万里路","书犹药也，善读之可以医愚","书中自有黄金屋，书中自有颜如玉",
-  "书到用时方恨少，事非经过不知难", "天道酬勤","勤能补拙","业精于勤荒于嬉","勤学如春起之苗，不见其增，日有所长",
-  "不勤于始，将悔于终", "志不立，天下无可成之事","立志欲坚不欲锐，成功在久不在速","志高则言洁，志远则行正","志不强者智不达","志当存高远",
-  "不登高山，不知天之高也；不临深溪，不知地之厚也","不入虎穴，焉得虎子","不经一番寒彻骨，怎得梅花扑鼻香","不经风雨，怎见彩虹",
-  "不试不知深浅，不学不知高低", "有志不在年高，无志空长百岁","有志者事竟成","有恒者成事，无恒者败事","有心人天不负",
-  "有道无术，术尚可求；有术无道，止于术", "千里之堤，溃于蚁穴","千里马常有，而伯乐不常有","千里送鹅毛，礼轻情意重","千里同风，万里共月",
-  "千里江陵一日还", "不积跬步，无以至千里","不积小流，无以成江海","不耻最后，何必先声夺人","不怕慢，就怕站","不怕路长，只怕志短", 
-  "锲而不舍，金石可镂","滴水穿石，绳锯木断","铁杵磨成针","功到自然成","坚持就是胜利", "工欲善其事，必先利其器","凡事预则立，不预则废",
-  "知己知彼，百战不殆","三人行，必有我师焉","温故而知新，可以为师矣", "学而时习之，不亦说乎","学而不厌，诲人不倦","学而不思则罔，思而不学则殆",
-  "知之为知之，不知为不知，是知也","知之者不如好之者，好之者不如乐之者", "读书破万卷，下笔如有神","书山有路勤为径，学海无涯苦作舟",
-  "黑发不知勤学早，白首方悔读书迟","少壮不努力，老大徒伤悲","光阴似箭，日月如梭"
+  "读书破万卷，下笔如有神","书山有路勤为径，学海无涯苦作舟","学而不厌，诲人不倦","学而时习之，不亦说乎","温故而知新，可以为师矣"
 ];
 
-// 兜底默认域名 (与您原始脚本中的列表保持一致)
+// 默认 DNS URL，作为兜底
+const DEFAULT_DNS_URL = "https://dns.alidns.com/resolve?name=NAME&type=TYPE";
+
+// 兜底默认域名
 const defaultDomains = [
   "openai.com", "cfcn-a-freegoa9.sectigo.pp.ua", "tajikistan.mfa.gov.ua", 
   "cfyx.aliyun.20237737.xyz", "commcloud.prod-abbs-ubi-com.cc-ecdn.net.cdn.cloudflare.net", 
@@ -63,39 +54,63 @@ const defaultDomains = [
 // ==========================================
 export async function onRequest(context) {
   const { request, env } = context;
-  const KV = env.DOMAINS_KV; // 使用您指定的 KV 命名空间名称
+  const KV = env.DOMAINS_KV;
+  const CONFIG_KEY = "config";
 
-  // 1. 从 KV 读取域名列表
-  let targetDomains = defaultDomains;
+  // 1. 从 KV 读取完整的配置 (域名列表 + DNS URL)
+  let config = {};
   try {
-    const domainData = await KV.get("domains");
-    if (domainData) {
-      const parsed = JSON.parse(domainData);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        targetDomains = parsed;
-      }
-    }
+    const configString = await KV.get(CONFIG_KEY);
+    config = configString ? JSON.parse(configString) : {};
   } catch (e) {
-    console.error("Failed to read or parse domains from KV:", e);
+    console.error("Failed to read or parse config from KV:", e);
   }
+
+  const targetDomains = (Array.isArray(config.domains) && config.domains.length > 0) 
+                        ? config.domains 
+                        : defaultDomains;
+                        
+  const dnsProviderUrl = config.dns_url || DEFAULT_DNS_URL;
   
-  // A. 处理 POST 请求 (IP 格式化)
+  // A. 处理 POST 请求 (IP 格式化和赋诗 - 已优化 IPv6 格式和全局去重)
   if (request.method === "POST") {
     try {
       const payload = await request.json();
-      const results = [];
-
+      
+      // 核心优化：使用 Set 来收集所有不重复的 IP
+      const uniqueIps = new Set();
+      
       for (const records of Object.values(payload || {})) {
-        const ips = normalizeIPs(records);
-        for (const ip of ips) {
-          const quote = quotes[Math.floor(Math.random() * quotes.length)];
-          // 输出格式：[IP]:443#[古诗]
-          results.push(`${ip}:443#${quote}`);
+        // 先确保单个域名返回的 IP 是有效的
+        const ips = normalizeIPs(records); 
+        // 将所有 IP 添加到 Set 中，实现全局去重
+        ips.forEach(ip => uniqueIps.add(ip));
+      }
+      
+      const results = [];
+      
+      // 遍历去重后的 IP 集合，进行赋诗和格式化
+      for (const ip of uniqueIps) {
+        const quote = quotes[Math.floor(Math.random() * quotes.length)];
+        
+        let formattedIp;
+        // 检查 IP 是否为 IPv6，并添加方括号
+        if (isIPv6(ip)) {
+            // IPv6 地址：格式化为 [IP]:443#古诗
+            formattedIp = `[${ip}]:443#${quote}`;
+        } else {
+            // IPv4 地址：格式化为 IP:443#古诗 (保持不变)
+            formattedIp = `${ip}:443#${quote}`;
         }
+        
+        results.push(formattedIp);
       }
 
       return Response.json(results);
+
     } catch (e) {
+      console.error("POST processing error:", e);
+      // 捕获 JSON 解析或处理错误，返回 400 状态码
       return new Response(JSON.stringify({ error: "Invalid JSON or processing error" }), {
         status: 400,
         headers: { "Content-Type": "application/json" }
@@ -103,16 +118,20 @@ export async function onRequest(context) {
     }
   }
 
-  // B. 处理 GET 请求 (返回前端页面)
-  // 调用 Pages 的默认行为，获取 /public/index.html 的内容
+  // B. 处理 GET 请求 (返回前端页面，包含 Base64 编码的配置)
   const response = await context.next(); 
   
-  // 注入域名列表到 HTML
+  // 核心：使用 Base64 编码域名列表和 DNS URL 来隐藏配置
+  const encodedDomains = btoa(JSON.stringify(targetDomains)); 
+  const encodedDnsUrl = btoa(dnsProviderUrl); 
+
   const text = await response.text();
-  const html = text.replace(
-      '/* TARGET_DOMAINS_PLACEHOLDER */', 
-      `const DOMAINS = ${JSON.stringify(targetDomains)};`
-  );
+  const injection = `
+    const ENCODED_DOMAINS = "${encodedDomains}";
+    const ENCODED_DNS_URL = "${encodedDnsUrl}";
+  `;
+  
+  const html = text.replace('/* TARGET_DOMAINS_PLACEHOLDER */', injection);
 
   return new Response(html, response);
 }
