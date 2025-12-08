@@ -13,16 +13,12 @@ const DEFAULT_DNS_PROVIDERS = [
 
 // 注入的前端 HTML 结构，已集成样式、密码和 DNS 服务商选择
 const ADMIN_HTML = (domains, currentProviderUrl) => {
-    // 1. 生成 <select> 选项列表
+    // 生成 <select> 选项列表
     const providerOptions = DEFAULT_DNS_PROVIDERS.map(p => {
         const selected = p.url === currentProviderUrl ? 'selected' : '';
         return `<option value="${p.url}" ${selected}>${p.name}</option>`;
     }).join('');
 
-    // 2. Base64 编码域名列表，用于前端 JS 解码
-    const encodedDomains = btoa(domains.join('\n'));
-    
-    // 3. 构造 HTML 模板
     return `
 <!DOCTYPE html>
 <html>
@@ -68,18 +64,6 @@ const ADMIN_HTML = (domains, currentProviderUrl) => {
     textarea {
         min-height: 200px; 
     }
-    /* 默认隐藏 DNS 选择框 */
-    #dns_provider {
-      display: none;
-    }
-    /* 设置文本域默认颜色以模拟密码输入 */
-    #domains {
-      color: #999; 
-    }
-    /* 成功后的样式 */
-    #domains.unlocked {
-      color: #333;
-    }
     button { 
       padding: 12px 25px; 
       font-size: 15px; 
@@ -111,7 +95,7 @@ const ADMIN_HTML = (domains, currentProviderUrl) => {
   <div class="container">
     <h2>🔑 域名列表管理</h2>
     <p style="color: #666; font-size: 14px; margin-bottom: 20px;">
-      请先输入管理密码进行解锁。
+        请在下方配置优选参数。
     </p>
     
     <form id="adminForm">
@@ -121,17 +105,8 @@ const ADMIN_HTML = (domains, currentProviderUrl) => {
         ${providerOptions}
       </select><br>
 
-      <textarea 
-        name="domains" 
-        id="domains" 
-        placeholder="******** (请先输入密码解锁)" 
-        data-encoded-domains="${encodedDomains}"
-        data-current-provider="${currentProviderUrl}"
-        readonly
-      >******** (请先输入密码解锁)</textarea><br>
-      
-      <button type="button" id="save_button" style="display: none;">💾 保存配置</button>
-      <button type="button" id="unlock_button">🔓 解锁</button>
+      <textarea name="domains" id="domains" placeholder="每行一个域名">${domains.join('\n')}</textarea><br>
+      <button type="submit">💾 保存配置</button>
     </form>
     
     <div id="message"></div>
@@ -141,138 +116,40 @@ const ADMIN_HTML = (domains, currentProviderUrl) => {
   <script>
     const form = document.getElementById('adminForm');
     const messageDiv = document.getElementById('message');
-    const passwordInput = document.getElementById('admin_key');
-    const domainsTextarea = document.getElementById('domains');
-    const dnsSelect = document.getElementById('dns_provider');
-    const saveButton = document.getElementById('save_button');
-    const unlockButton = document.getElementById('unlock_button');
 
-    // 辅助函数：解码 Base64 字符串
-    function decodeBase64(encoded) {
-      try {
-        // 使用 atob() 进行 Base64 解码
-        return atob(encoded);
-      } catch (e) {
-        console.error("Base64 Decode Error:", e);
-        return '';
+    form.onsubmit = async (e) => {
+      e.preventDefault();
+      messageDiv.textContent = '保存中...';
+      messageDiv.className = '';
+      
+      const password = document.getElementById('admin_key').value;
+      const providerUrl = document.getElementById('dns_provider').value;
+      
+      const formData = new FormData(form);
+      
+      // 清洗输入
+      const domains = formData.get('domains').split(/\\s*\\n\\s*/).map(s => s.trim()).filter(s => s.length > 0);
+
+      // 发送 POST 请求
+      const res = await fetch('/admin', {
+        method: 'POST',
+        headers: { 
+            'Content-Type': 'application/json',
+            'X-Admin-Key': password
+        },
+        body: JSON.stringify({ domains: domains, dns_url: providerUrl }) // 新增 dns_url
+      });
+
+      if (res.ok) {
+        messageDiv.className = 'success';
+        messageDiv.textContent = '✅ 配置保存成功！';
+      } else if (res.status === 401) {
+        messageDiv.className = 'error';
+        messageDiv.textContent = '❌ 认证失败，密码错误！';
+      } else {
+        messageDiv.className = 'error';
+        messageDiv.textContent = '❌ 保存失败：' + (await res.text() || "未知错误");
       }
-    }
-
-    // 1. 独立解锁逻辑
-    unlockButton.onclick = async (e) => {
-        e.preventDefault();
-        messageDiv.textContent = '验证中...';
-        messageDiv.className = '';
-        
-        const password = passwordInput.value;
-        if (!password) {
-            messageDiv.className = 'error';
-            messageDiv.textContent = '❌ 请输入密码！';
-            return;
-        }
-
-        // 发送一个只包含密码的轻量级 POST 请求到 /admin 验证身份
-        const testData = { domains: [], dns_url: 'TEST_URL' };
-
-        try {
-            const res = await fetch('/admin', {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'X-Admin-Key': password
-                },
-                body: JSON.stringify(testData)
-            });
-
-            if (res.ok) {
-                // 验证成功！执行解锁操作
-                const encodedDomains = domainsTextarea.getAttribute('data-encoded-domains');
-                
-                // 填充域名文本域
-                domainsTextarea.value = decodeBase64(encodedDomains);
-                domainsTextarea.removeAttribute('readonly');
-                domainsTextarea.placeholder = '每行一个域名';
-                domainsTextarea.classList.add('unlocked');
-
-                // 显示 DNS 选择框
-                dnsSelect.style.display = 'block';
-
-                // 按钮状态切换
-                saveButton.style.display = 'inline-block'; // 显示保存按钮
-                unlockButton.style.display = 'none';      // 隐藏解锁按钮
-                
-                passwordInput.disabled = true; // 密码锁定，避免误操作
-                messageDiv.className = 'success';
-                messageDiv.textContent = '✅ 解锁成功！请修改并保存配置。';
-            
-            } else if (res.status === 401) {
-                messageDiv.className = 'error';
-                messageDiv.textContent = '❌ 认证失败，密码错误！';
-            } else {
-                // 其他服务端错误
-                messageDiv.className = 'error';
-                messageDiv.textContent = '❌ 验证失败：' + (await res.text() || "未知服务端错误");
-            }
-        } catch (error) {
-            // 网络或 CORS 错误
-            messageDiv.className = 'error';
-            messageDiv.textContent = '❌ 网络请求失败，请检查连接或 Pages Function 状态。';
-            console.error("Unlock Fetch Error:", error);
-        }
-    };
-
-    // 2. 独立的保存配置逻辑 (绑定到保存按钮)
-    saveButton.onclick = async (e) => {
-        e.preventDefault();
-
-        // 检查是否已解锁 (即是否移除了 readonly 属性)
-        if (domainsTextarea.readOnly) {
-            messageDiv.className = 'error';
-            messageDiv.textContent = '❌ 请先点击“解锁”按钮并验证密码！';
-            return;
-        }
-        
-        messageDiv.textContent = '保存中...';
-        messageDiv.className = '';
-        
-        // 密码从输入框中获取
-        const password = passwordInput.value; 
-        const providerUrl = dnsSelect.value;
-        
-        // 清洗域名输入
-        const domains = domainsTextarea.value.split(/\s*\n\s*/).map(s => s.trim()).filter(s => s.length > 0);
-
-        try {
-            // 发送 POST 请求保存数据
-            const res = await fetch('/admin', {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'X-Admin-Key': password 
-                },
-                body: JSON.stringify({ domains: domains, dns_url: providerUrl })
-            });
-
-            if (res.ok) {
-                messageDiv.className = 'success';
-                messageDiv.textContent = '✅ 配置保存成功！';
-                
-                // 重新编码新数据，更新到 data 属性中，以便下次刷新页面时使用
-                domainsTextarea.setAttribute('data-encoded-domains', btoa(domains.join('\n')));
-
-            } else if (res.status === 401) {
-                messageDiv.className = 'error';
-                messageDiv.textContent = '❌ 认证失败，密码错误！';
-                passwordInput.disabled = false; // 重新启用密码输入框供用户修改
-            } else {
-                messageDiv.className = 'error';
-                messageDiv.textContent = '❌ 保存失败：' + (await res.text() || "未知服务端错误");
-            }
-        } catch (error) {
-            messageDiv.className = 'error';
-            messageDiv.textContent = '❌ 网络请求失败，请检查连接。';
-            console.error("Save Fetch Error:", error);
-        }
     };
   </script>
 </body>
@@ -281,22 +158,20 @@ const ADMIN_HTML = (domains, currentProviderUrl) => {
 };
 
 // ==========================================
-// 核心处理逻辑 (Functions)
+// 核心处理逻辑
 // ==========================================
 
 export async function onRequest(context) {
   const { request, env } = context;
   const KV = env.DOMAINS_KV;
-  // 确保您已在 Cloudflare Pages 设置中配置了 ADMIN_PASSWORD 环境变量
-  const ADMIN_KEY = env.ADMIN_PASSWORD; 
-  const KEY = "config"; 
+  const ADMIN_KEY = env.ADMIN_PASSWORD;
+  const KEY = "config"; // 使用一个统一的 KEY 来存储配置对象
 
   // POST 请求：保存数据 (需要密码验证)
   if (request.method === "POST") {
     // 1. 验证密码
     const clientKey = request.headers.get('X-Admin-Key');
     
-    // 检查密码是否设置且是否匹配
     if (!ADMIN_KEY || !clientKey || clientKey !== ADMIN_KEY) {
         return new Response("Unauthorized: Invalid password.", { status: 401 });
     }
@@ -316,7 +191,6 @@ export async function onRequest(context) {
       return new Response("OK", { status: 200 });
 
     } catch (e) {
-      // JSON 解析失败或其他数据格式问题
       return new Response(`Error: ${e.message}`, { status: 400 });
     }
   }
@@ -326,6 +200,7 @@ export async function onRequest(context) {
   let config = configString ? JSON.parse(configString) : {};
 
   // 默认值
+  // 确保使用更新后的 DEFAULT_DNS_PROVIDERS[0].url 作为默认 DNS URL
   const DEFAULT_DNS_URL = DEFAULT_DNS_PROVIDERS[0].url; 
   const domainsArray = config.domains || ["openai.com", "cf.pages.dev"];
   const currentProviderUrl = config.dns_url || DEFAULT_DNS_URL;
