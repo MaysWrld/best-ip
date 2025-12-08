@@ -4,7 +4,9 @@
 // 1. 工具函数 (IP 验证与清洗)
 // ==========================================
 const isIPv4 = (ip) => /^(\d{1,3}\.){3}\d{1,3}$/.test(ip);
+// 注意：isIPv6 的正则比较宽松，依赖于后续的格式化逻辑
 const isIPv6 = (ip) => /^[0-9a-f:]+$/i.test(ip) && ip.includes(":");
+
 const normalizeIPs = (arr) => {
   const set = new Set();
   for (const ip of arr || []) {
@@ -73,12 +75,12 @@ export async function onRequest(context) {
     console.error("Failed to read or parse config from KV:", e);
   }
 
-  const targetDomains = (Array.isArray(config.domains) && config.domains.length > 0) 
-                        ? config.domains 
-                        : defaultDomains;
-                        
+  const targetDomains = (Array.isArray(config.domains) && config.domains.length > 0)
+                            ? config.domains
+                            : defaultDomains;
+
   const dnsProviderUrl = config.dns_url || DEFAULT_DNS_URL;
-  
+
   // A. 处理 POST 请求 (接收前端解析结果并格式化赋诗)
   if (request.method === "POST") {
     try {
@@ -89,7 +91,18 @@ export async function onRequest(context) {
         const ips = normalizeIPs(records);
         for (const ip of ips) {
           const quote = quotes[Math.floor(Math.random() * quotes.length)];
-          results.push(`${ip}:443#${quote}`);
+          
+          let formattedIp;
+          // **修改逻辑：判断是否为 IPv6，并添加中括号**
+          if (isIPv6(ip)) {
+            // IPv6 地址格式：[2606:4700:3010:0:fb:e0fe:4942:60b6]:443#诗句
+            formattedIp = `[${ip}]:443#${quote}`;
+          } else {
+            // IPv4 地址格式：104.26.15.158:443#诗句
+            formattedIp = `${ip}:443#${quote}`;
+          }
+          
+          results.push(formattedIp);
         }
       }
 
@@ -104,12 +117,12 @@ export async function onRequest(context) {
   }
 
   // B. 处理 GET 请求 (返回前端页面)
-  const response = await context.next(); 
-  
+  const response = await context.next();
+
   // 核心：使用 Base64 编码域名列表和 DNS URL
   // JSON.stringify(targetDomains) 是域名数组的字符串表示
-  const encodedDomains = btoa(JSON.stringify(targetDomains)); 
-  const encodedDnsUrl = btoa(dnsProviderUrl); 
+  const encodedDomains = btoa(JSON.stringify(targetDomains));
+  const encodedDnsUrl = btoa(dnsProviderUrl);
 
   const text = await response.text();
   // 注入编码后的变量到 HTML 中
@@ -117,7 +130,7 @@ export async function onRequest(context) {
     const ENCODED_DOMAINS = "${encodedDomains}";
     const ENCODED_DNS_URL = "${encodedDnsUrl}";
   `;
-  
+
   const html = text.replace('/* TARGET_DOMAINS_PLACEHOLDER */', injection);
 
   return new Response(html, response);
