@@ -7,46 +7,46 @@ const isIPv4 = (ip) => /^(\d{1,3}\.){3}\d{1,3}$/.test(ip);
 const isIPv6 = (ip) => /^[0-9a-f:]+$/i.test(ip) && ip.includes(":");
 
 const normalizeIPs = (arr) => {
-  const set = new Set();
-  for (const ip of arr || []) {
-    const pure = ip.trim();
-    if (isIPv4(pure) || isIPv6(pure)) set.add(pure);
-  }
-  return [...set];
+  const set = new Set();
+  for (const ip of arr || []) {
+    const pure = ip.trim();
+    if (isIPv4(pure) || isIPv6(pure)) set.add(pure);
+  }
+  return [...set];
 };
 
 // 中国古诗名句库 (用于后端赋诗)
 const quotes = [
-  "长风破浪会有时","会当凌绝顶，一览众山小","宝剑锋从磨砺出","梅花香自苦寒来","天生我材必有用",
-  "千里之行，始于足下","路漫漫其修远兮，吾将上下而求索","不畏浮云遮望眼","海内存知己，天涯若比邻","莫愁前路无知己",
-  "业精于勤荒于嬉","黑发不知勤学早，白首方悔读书迟","少壮不努力，老大徒伤悲","书山有路勤为径，学海无涯苦作舟","学而不厌，诲人不倦",
-  "敏而好学，不耻下问","读书破万卷，下笔如有神","学而时习之，不亦说乎","知之者不如好之者，好之者不如乐之者","学而不思则罔，思而不学则殆",
-  "天行健，君子以自强不息","地势坤，君子以厚德载物","穷且益坚，不坠青云之志","志当存高远","燕雀安知鸿鹄之志",
-  "会挽雕弓如满月，西北望，射天狼","人生自古谁无死，留取丹心照汗青","先天下之忧而忧，后天下之乐而乐","苟利国家生死以，岂因祸福避趋之","天下兴亡，匹夫有责",
-  "位卑未敢忘忧国","人生如逆旅，我亦是行人","人生得意须尽欢，莫使金樽空对月","仰天大笑出门去，我辈岂是蓬蒿人","安能摧眉折腰事权贵，使我不得开心颜",
-  "大鹏一日同风起，扶摇直上九万里","直挂云帆济沧海","长风几万里，吹度玉门关","欲穷千里目，更上一层楼","会当凌绝顶，一览众山小",
-  "江山代有人才出，各领风骚数百年","沉舟侧畔千帆过，病树前头万木春","长江后浪推前浪，世上新人赶旧人","青山遮不住，毕竟东流去","莫愁前路无知己，天下谁人不识君",
-  "人生如梦，一尊还酹江月","人生如寄，多忧何益","人生天地间，忽如远行客","人生若只如初见","人生在世不称意，明朝散发弄扁舟",
-  "人生如朝露，何必久留","人生如白驹过隙","人生如寄，何必久留","人生如梦，何必多忧","人生如逆旅，我亦是行人",
-  "少壮不努力，老大徒伤悲","莫等闲，白了少年头，空悲切","花有重开日，人无再少年","盛年不重来，一日难再晨","及时当勉励，岁月不待人",
-  "百川东到海，何时复西归","少壮不努力，老大徒伤悲","黑发不知勤学早，白首方悔读书迟","一寸光阴一寸金，寸金难买寸光阴","光阴似箭，日月如梭",
-  "志不强者智不达","志当存高远","有志者事竟成","不飞则已，一飞冲天","不鸣则已，一鸣惊人",
-  "千里之行，始于足下","不积跬步，无以至千里","不积小流，无以成江海","绳锯木断，水滴石穿","锲而不舍，金石可镂",
-  "工欲善其事，必先利其器","凡事预则立，不预则废","敏而好学，不耻下问","学而不思则罔，思而不学则殆","知之者不如好之者，好之者不如乐之者",
-  "读书破万卷，下笔如有神","书山有路勤为径，学海无涯苦作舟","学而不厌，诲人不倦","学而时习之，不亦说乎","温故而知新，可以为师矣", // <-- 修复了语法错误
-  "长风破浪会有时，直挂云帆济沧海","人生如棋，落子无悔","人生如戏，全凭演技","人生如酒，愈久愈香","人生如歌，曲终人散",
-  "玉不琢不成器，人不学不知义","学然后知不足，教然后知困","学而不厌，诲人不倦","学而不思则罔，思而不学则殆",
-  "读万卷书，行万里路","书犹药也，善读之可以医愚","书中自有黄金屋，书中自有颜如玉","书到用时方恨少，事非经过不知难",
-  "天道酬勤","勤能补拙","业精于勤荒于嬉","勤学如春起之苗，不见其增，日有所长","不勤于始，将悔于终",
-  "志不立，天下无可成之事","立志欲坚不欲锐，成功在久不在速","志高则言洁，志远则行正","志不强者智不达","志当存高远",
-  "不登高山，不知天之高也；不临深溪，不知地之厚也","不入虎穴，焉得虎子","不经一番寒彻骨，怎得梅花扑鼻香","不经风雨，怎见彩虹","不试不知深浅，不学不知高低",
-  "有志不在年高，无志空长百岁","有志者事竟成","有恒者成事，无恒者败事","有心人天不负","有道无术，术尚可求；有术无道，止于术",
-  "千里之堤，溃于蚁穴","千里马常有，而伯乐不常有","千里送鹅毛，礼轻情意重","千里同风，万里共月","千里江陵一日还",
-  "不积跬步，无以至千里","不积小流，无以成江海","不耻最后，何必先声夺人","不怕慢，就怕站","不怕路长，只怕志短",
-  "锲而不舍，金石可镂","滴水穿石，绳锯木断","铁杵磨成针","功到自然成","坚持就是胜利",
-  "工欲善其事，必先利其器","凡事预则立，不预则废","知己知彼，百战不殆","三人行，必有我师焉","温故而知新，可以为师矣",
-  "学而时习之，不亦说乎","学而不厌，诲人不倦","学而不思则罔，思而不学则殆","知之为知之，不知为不知，是知也","知之者不如好之者，好之者不如乐之者",
-  "读书破万卷，下笔如有神","书山有路勤为径，学海无涯苦作舟","黑发不知勤学早，白首方悔读书迟","少壮不努力，老大徒伤悲","光阴似箭，日月如梭"
+  "长风破浪会有时","会当凌绝顶，一览众山小","宝剑锋从磨砺出","梅花香自苦寒来","天生我材必有用",
+  "千里之行，始于足下","路漫漫其修远兮，吾将上下而求索","不畏浮云遮望眼","海内存知己，天涯若比邻","莫愁前路无知己",
+  "业精于勤荒于嬉","黑发不知勤学早，白首方悔读书迟","少壮不努力，老大徒伤悲","书山有路勤为径，学海无涯苦作舟","学而不厌，诲人不倦",
+  "敏而好学，不耻下问","读书破万卷，下笔如有神","学而时习之，不亦说乎","知之者不如好之者，好之者不如乐之者","学而不思则罔，思而不学则殆",
+  "天行健，君子以自强不息","地势坤，君子以厚德载物","穷且益坚，不坠青云之志","志当存高远","燕雀安知鸿鹄之志",
+  "会挽雕弓如满月，西北望，射天狼","人生自古谁无死，留取丹心照汗青","先天下之忧而忧，后天下之乐而乐","苟利国家生死以，岂因祸福避趋之","天下兴亡，匹夫有责",
+  "位卑未敢忘忧国","人生如逆旅，我亦是行人","人生得意须尽欢，莫使金樽空对月","仰天大笑出门去，我辈岂是蓬蒿人","安能摧眉折腰事权贵，使我不得开心颜",
+  "大鹏一日同风起，扶摇直上九万里","直挂云帆济沧海","长风几万里，吹度玉门关","欲穷千里目，更上一层楼","会当凌绝顶，一览众山小",
+  "江山代有人才出，各领风骚数百年","沉舟侧畔千帆过，病树前头万木春","长江后浪推前浪，世上新人赶旧人","青山遮不住，毕竟东流去","莫愁前路无知己，天下谁人不识君",
+  "人生如梦，一尊还酹江月","人生如寄，多忧何益","人生天地间，忽如远行客","人生若只如初见","人生在世不称意，明朝散发弄扁舟",
+  "人生如朝露，何必久留","人生如白驹过隙","人生如寄，何必久留","人生如梦，何必多忧","人生如逆旅，我亦是行人",
+  "少壮不努力，老大徒伤悲","莫等闲，白了少年头，空悲切","花有重开日，人无再少年","盛年不重来，一日难再晨","及时当勉励，岁月不待人",
+  "百川东到海，何时复西归","少壮不努力，老大徒伤悲","黑发不知勤学早，白首方悔读书迟","一寸光阴一寸金，寸金难买寸光阴","光阴似箭，日月如梭",
+  "志不强者智不达","志当存高远","有志者事竟成","不飞则已，一飞冲天","不鸣则已，一鸣惊人",
+  "千里之行，始于足下","不积跬步，无以至千里","不积小流，无以成江海","绳锯木断，水滴石穿","锲而不舍，金石可镂",
+  "工欲善其事，必先利其器","凡事预则立，不预则废","敏而好学，不耻下问","学而不思则罔，思而不学则殆","知之者不如好之者，好之者不如乐之者",
+  "读书破万卷，下笔如有神","书山有路勤为径，学海无涯苦作舟","学而不厌，诲人不倦","学而时习之，不亦说乎","温故而知新，可以为师矣", // <-- 修复了语法错误
+  "长风破浪会有时，直挂云帆济沧海","人生如棋，落子无悔","人生如戏，全凭演技","人生如酒，愈久愈香","人生如歌，曲终人散",
+  "玉不琢不成器，人不学不知义","学然后知不足，教然后知困","学而不厌，诲人不倦","学而不思则罔，思而不学则殆",
+  "读万卷书，行万里路","书犹药也，善读之可以医愚","书中自有黄金屋，书中自有颜如玉","书到用时方恨少，事非经过不知难",
+  "天道酬勤","勤能补拙","业精于勤荒于嬉","勤学如春起之苗，不见其增，日有所长","不勤于始，将悔于终",
+  "志不立，天下无可成之事","立志欲坚不欲锐，成功在久不在速","志高则言洁，志远则行正","志不强者智不达","志当存高远",
+  "不登高山，不知天之高也；不临深溪，不知地之厚也","不入虎穴，焉得虎子","不经一番寒彻骨，怎得梅花扑鼻香","不经风雨，怎见彩虹","不试不知深浅，不学不知高低",
+  "有志不在年高，无志空长百岁","有志者事竟成","有恒者成事，无恒者败事","有心人天不负","有道无术，术尚可求；有术无道，止于术",
+  "千里之堤，溃于蚁穴","千里马常有，而伯乐不常有","千里送鹅毛，礼轻情意重","千里同风，万里共月","千里江陵一日还",
+  "不积跬步，无以至千里","不积小流，无以成江海","不耻最后，何必先声夺人","不怕慢，就怕站","不怕路长，只怕志短",
+  "锲而不舍，金石可镂","滴水穿石，绳锯木断","铁杵磨成针","功到自然成","坚持就是胜利",
+  "工欲善其事，必先利其器","凡事预则立，不预则废","知己知彼，百战不殆","三人行，必有我师焉","温故而知新，可以为师矣",
+  "学而时习之，不亦说乎","学而不厌，诲人不倦","学而不思则罔，思而不学则殆","知之为知之，不知为不知，是知也","知之者不如好之者，好之者不如乐之者",
+  "读书破万卷，下笔如有神","书山有路勤为径，学海无涯苦作舟","黑发不知勤学早，白首方悔读书迟","少壮不努力，老大徒伤悲","光阴似箭，日月如梭"
 ];
 
 // 默认 DNS URL，作为兜底
@@ -54,108 +54,120 @@ const DEFAULT_DNS_URL = "https://dns.alidns.com/resolve?name=NAME&type=TYPE";
 
 // 兜底默认域名 (仅在 KV 为空时使用，且仅在后端读取)
 const defaultDomains = [
-  "z1.400123456.xyz"
-  "z2.400123456.xyz"
-  "z3.400123456.xyz"
-  "z4.400123456.xyz"
-  "z5.400123456.xyz"
-  "z6.400123456.xyz"
-  "z7.400123456.xyz"
-  "z8.400123456.xyz"
-  "z9.400123456.xyz"
-  "z10.400123456.xyz"
-  "z11.400123456.xyz"
-  "z12.400123456.xyz"
-  "z13.400123456.xyz"
-  "z14.400123456.xyz"
-  "z15.400123456.xyz"
-  "z16.400123456.xyz"
-  "z17.400123456.xyz"
-  "z18.400123456.xyz"
+  "z1.400123456.xyz",
+  "z2.400123456.xyz",
+  "z3.400123456.xyz",
+  "z4.400123456.xyz",
+  "z5.400123456.xyz",
+  "z6.400123456.xyz",
+  "z7.400123456.xyz",
+  "z8.400123456.xyz",
+  "z9.400123456.xyz",
+  "z10.400123456.xyz",
+  "z11.400123456.xyz",
+  "z12.400123456.xyz",
+  "z13.400123456.xyz",
+  "z14.400123456.xyz",
+  "z15.400123456.xyz",
+  "z16.400123456.xyz",
+  "z17.400123456.xyz",
+  "z18.400123456.xyz"
+];
 
+// **新增**：随机端口列表
+const RANDOM_PORTS = [
+  443,
+  8443,
+  2053,
+  2083,
+  2087,
+  2096
 ];
 
 // ==========================================
 // 2. 核心处理函数
 // ==========================================
 export async function onRequest(context) {
-  const { request, env } = context;
-  const KV = env.DOMAINS_KV;
-  const CONFIG_KEY = "config";
+  const { request, env } = context;
+  const KV = env.DOMAINS_KV;
+  const CONFIG_KEY = "config";
 
-  // 1. 从 KV 读取完整的配置 (域名列表 + DNS URL)
-  let config = {};
-  try {
-    const configString = await KV.get(CONFIG_KEY);
-    config = configString ? JSON.parse(configString) : {};
-  } catch (e) {
-    console.error("Failed to read or parse config from KV:", e);
-  }
+  // 1. 从 KV 读取完整的配置 (域名列表 + DNS URL)
+  let config = {};
+  try {
+    const configString = await KV.get(CONFIG_KEY);
+    config = configString ? JSON.parse(configString) : {};
+  } catch (e) {
+    console.error("Failed to read or parse config from KV:", e);
+  }
 
-  const targetDomains = (Array.isArray(config.domains) && config.domains.length > 0)
-                            ? config.domains
-                            : defaultDomains;
+  const targetDomains = (Array.isArray(config.domains) && config.domains.length > 0)
+                            ? config.domains
+                            : defaultDomains;
 
-  const dnsProviderUrl = config.dns_url || DEFAULT_DNS_URL;
+  const dnsProviderUrl = config.dns_url || DEFAULT_DNS_URL;
 
-  // A. 处理 POST 请求 (接收前端解析结果并格式化赋诗)
-  if (request.method === "POST") {
-    try {
-      const payload = await request.json();
-      const results = [];
-      
-      // 优化 1: 创建全局 Set 来存储所有唯一的 IP
-      const uniqueIps = new Set(); 
+  // A. 处理 POST 请求 (接收前端解析结果并格式化赋诗)
+  if (request.method === "POST") {
+    try {
+      const payload = await request.json();
+      const results = [];
+      
+      // 优化 1: 创建全局 Set 来存储所有唯一的 IP
+      const uniqueIps = new Set(); 
 
-      // 优化 2: 遍历所有记录，将去重后的 IP 加入全局 Set
-      for (const records of Object.values(payload || {})) {
-        const ips = normalizeIPs(records);
-        for (const ip of ips) {
-          uniqueIps.add(ip);
-        }
-      }
-      
-      // 优化 3: 遍历全局唯一的 IP 列表进行赋诗和格式化
-      for (const ip of uniqueIps) {
-        // 随机获取一句诗词
-        const quote = quotes[Math.floor(Math.random() * quotes.length)];
-        
-        let formattedIp;
-        // 核心格式化逻辑：IPv6 添加中括号
-        if (isIPv6(ip)) {
-          formattedIp = `[${ip}]:443#${quote}`;
-        } else {
-          formattedIp = `${ip}:443#${quote}`;
-        }
-        
-        results.push(formattedIp);
-      }
+      // 优化 2: 遍历所有记录，将去重后的 IP 加入全局 Set
+      for (const records of Object.values(payload || {})) {
+        const ips = normalizeIPs(records);
+        for (const ip of ips) {
+          uniqueIps.add(ip);
+        }
+      }
+      
+      // 优化 3: 遍历全局唯一的 IP 列表进行赋诗和格式化
+      for (const ip of uniqueIps) {
+        // 随机获取一句诗词
+        const quote = quotes[Math.floor(Math.random() * quotes.length)];
+        
+        // **修改点 1: 随机选择一个端口**
+        const randomPort = RANDOM_PORTS[Math.floor(Math.random() * RANDOM_PORTS.length)];
 
-      return Response.json(results);
-    } catch (e) {
-      // 捕获 JSON 解析或处理错误，返回 400 状态码
-      return new Response(JSON.stringify({ error: "Invalid JSON or processing error" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" }
-      });
-    }
-  }
+        let formattedIp;
+        // 核心格式化逻辑：IPv6 添加中括号，并使用随机端口
+        if (isIPv6(ip)) {
+          formattedIp = `[${ip}]:${randomPort}#${quote}`;
+        } else {
+          formattedIp = `${ip}:${randomPort}#${quote}`;
+        }
+        
+        results.push(formattedIp);
+      }
 
-  // B. 处理 GET 请求 (返回前端页面)
-  const response = await context.next();
+      return Response.json(results);
+    } catch (e) {
+      // 捕获 JSON 解析或处理错误，返回 400 状态码
+      return new Response(JSON.stringify({ error: "Invalid JSON or processing error" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+  }
 
-  // 核心：使用 Base64 编码域名列表和 DNS URL
-  const encodedDomains = btoa(JSON.stringify(targetDomains));
-  const encodedDnsUrl = btoa(dnsProviderUrl);
+  // B. 处理 GET 请求 (返回前端页面)
+  const response = await context.next();
 
-  const text = await response.text();
-  // 注入编码后的变量到 HTML 中
-  const injection = `
-    const ENCODED_DOMAINS = "${encodedDomains}";
-    const ENCODED_DNS_URL = "${encodedDnsUrl}";
-  `;
+  // 核心：使用 Base64 编码域名列表和 DNS URL
+  const encodedDomains = btoa(JSON.stringify(targetDomains));
+  const encodedDnsUrl = btoa(dnsProviderUrl);
 
-  const html = text.replace('/* TARGET_DOMAINS_PLACEHOLDER */', injection);
+  const text = await response.text();
+  // 注入编码后的变量到 HTML 中
+  const injection = `
+    const ENCODED_DOMAINS = "${encodedDomains}";
+    const ENCODED_DNS_URL = "${encodedDnsUrl}";
+  `;
 
-  return new Response(html, response);
+  const html = text.replace('/* TARGET_DOMAINS_PLACEHOLDER */', injection);
+
+  return new Response(html, response);
 }
